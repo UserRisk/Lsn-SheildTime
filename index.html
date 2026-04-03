@@ -7,8 +7,8 @@
   <style>
     :root {
       --bg: #07111f;
-      --panel: rgba(9, 23, 44, 0.04);
-      --panel-border: rgba(142, 208, 255, 0.05);
+      --panel: rgba(9, 23, 44, 0.2);
+      --panel-border: rgba(142, 208, 255, 0.12);
       --text: #eaf6ff;
       --muted: #9cb9d3;
       --accent: #73d6ff;
@@ -127,6 +127,58 @@
       line-height: 1.55;
     }
 
+    .intro-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .hint-wrap {
+      position: relative;
+      flex-shrink: 0;
+      margin-top: 12px;
+    }
+
+    .hint-button {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(142, 208, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      padding: 0;
+    }
+
+    .hint-popover {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: min(320px, 70vw);
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(7, 17, 31, 0.88);
+      border: 1px solid rgba(142, 208, 255, 0.16);
+      color: var(--text);
+      line-height: 1.45;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-4px);
+      transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+      z-index: 4;
+    }
+
+    .hint-wrap:hover .hint-popover,
+    .hint-wrap:focus-within .hint-popover,
+    .hint-wrap.open .hint-popover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -152,8 +204,8 @@
     input,
     select {
       width: 100%;
-      border: 1px solid rgba(142, 208, 255, 0.05);
-      background: rgba(8, 20, 38, 0.07);
+      border: 1px solid rgba(142, 208, 255, 0.12);
+      background: rgba(8, 20, 38, 0.24);
       color: var(--text);
       border-radius: 16px;
       padding: 14px 16px;
@@ -197,8 +249,8 @@
 
     .ghost {
       color: var(--text);
-      background: rgba(255, 255, 255, 0.01);
-      border: 1px solid rgba(142, 208, 255, 0.07);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(142, 208, 255, 0.12);
     }
 
     .summary {
@@ -211,8 +263,8 @@
     .result-card {
       padding: 18px 18px 20px;
       border-radius: 22px;
-      background: rgba(255, 255, 255, 0.012);
-      border: 1px solid rgba(142, 208, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(142, 208, 255, 0.13);
       animation: pulseGlow 4s ease-in-out infinite;
     }
 
@@ -240,8 +292,8 @@
     .stat {
       padding: 16px;
       border-radius: 18px;
-      background: rgba(255, 255, 255, 0.008);
-      border: 1px solid rgba(142, 208, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(142, 208, 255, 0.12);
     }
 
     .stat-title {
@@ -259,7 +311,7 @@
       min-height: 60px;
       padding: 16px 18px;
       border-radius: 18px;
-      background: rgba(255, 255, 255, 0.008);
+      background: rgba(255, 255, 255, 0.05);
       color: var(--muted);
       line-height: 1.5;
     }
@@ -276,6 +328,35 @@
       font-size: 0.86rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
+    }
+
+    .audio-overlay {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .audio-overlay.visible {
+      display: flex;
+    }
+
+    .audio-overlay button {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+      pointer-events: none;
     }
 
     @keyframes riseIn {
@@ -341,23 +422,30 @@
     </video>
   </div>
 
+  <div class="audio-overlay" id="audioOverlay">
+    <button id="audioStartButton" type="button">Click anywhere for audio</button>
+  </div>
+
   <main class="shell">
     <section class="panel calculator">
       <p class="eyebrow">LifestealNet Utility</p>
       <h1>Shield Time Calculator</h1>
-      <p class="intro">
-        Estimate how long your claim shield needs to recharge based on your team size and current shield.
-      </p>
+      <div class="intro-row">
+        <p class="intro">
+          Estimate how long your claim shield needs to recharge based on your team size and current shield.
+        </p>
+        <div class="hint-wrap" id="hintWrap">
+          <button class="hint-button" id="hintButton" type="button" aria-label="Show calculator note">i</button>
+          <div class="hint-popover">
+            For this all players need to be online. I dont have the exact calculations from Lifesteal, these values can be completely correct or wrong.
+          </div>
+        </div>
+      </div>
 
       <div class="grid">
         <div class="field">
           <label for="teamSize">Total players in claim</label>
           <input id="teamSize" type="number" min="1" max="12" value="4">
-        </div>
-
-        <div class="field">
-          <label for="onlinePlayers">Online players</label>
-          <input id="onlinePlayers" type="number" min="0" max="12" value="1">
         </div>
 
         <div class="field">
@@ -398,8 +486,8 @@
           <strong id="activationDelay">15m manual</strong>
         </div>
         <div class="stat">
-          <span class="stat-title">Online status</span>
-          <strong id="onlineStatus">Charging</strong>
+          <span class="stat-title">Team scaling</span>
+          <strong id="teamScaling">Normal</strong>
         </div>
       </div>
 
@@ -418,21 +506,25 @@
     const MANUAL_DELAY_MINUTES = 15;
 
     const teamSizeInput = document.getElementById("teamSize");
-    const onlinePlayersInput = document.getElementById("onlinePlayers");
     const currentShieldInput = document.getElementById("currentShield");
     const targetShieldInput = document.getElementById("targetShield");
     const bgVideo = document.getElementById("bgVideo");
+    const audioOverlay = document.getElementById("audioOverlay");
+    const hintWrap = document.getElementById("hintWrap");
+    const hintButton = document.getElementById("hintButton");
 
     const timeToTargetOutput = document.getElementById("timeToTarget");
     const chargeRateOutput = document.getElementById("chargeRate");
     const missingShieldOutput = document.getElementById("missingShield");
     const activationDelayOutput = document.getElementById("activationDelay");
-    const onlineStatusOutput = document.getElementById("onlineStatus");
+    const teamScalingOutput = document.getElementById("teamScaling");
     const statusOutput = document.getElementById("status");
 
     document.getElementById("calculateBtn").addEventListener("click", calculate);
     document.getElementById("resetBtn").addEventListener("click", resetForm);
-
+    hintButton.addEventListener("click", () => {
+      hintWrap.classList.toggle("open");
+    });
     function formatDurationFromHours(hours) {
       const safeHours = Math.max(0, hours);
       const totalSeconds = Math.round(safeHours * 3600);
@@ -460,23 +552,28 @@
       statusOutput.className = isError ? "status error" : "status";
     }
 
-    function attachAudioUnlock() {
-      const unlock = async () => {
-        try {
-          bgVideo.currentTime = 0;
-          bgVideo.muted = false;
-          bgVideo.volume = 1;
-          await bgVideo.play();
-        } catch (error) {
-          // Ignore repeated browser autoplay blocks.
-        } finally {
-          document.removeEventListener("pointerdown", unlock);
-          document.removeEventListener("keydown", unlock);
-        }
+    async function startAudioFromBeginning() {
+      try {
+        bgVideo.pause();
+        bgVideo.currentTime = 0;
+        bgVideo.muted = false;
+        bgVideo.volume = 1;
+        await bgVideo.play();
+        audioOverlay.classList.remove("visible");
+      } catch (error) {
+        setStatus("Audio is blocked until the browser allows playback.", true);
+      }
+    }
+
+    function enableClickAnywhereAudio() {
+      const unlockAudio = async () => {
+        document.removeEventListener("pointerdown", unlockAudio);
+        document.removeEventListener("keydown", unlockAudio);
+        await startAudioFromBeginning();
       };
 
-      document.addEventListener("pointerdown", unlock, { once: true });
-      document.addEventListener("keydown", unlock, { once: true });
+      document.addEventListener("pointerdown", unlockAudio, { once: true });
+      document.addEventListener("keydown", unlockAudio, { once: true });
     }
 
     async function tryAutoplayWithAudio() {
@@ -489,13 +586,13 @@
       } catch (error) {
         bgVideo.muted = true;
         await bgVideo.play().catch(() => {});
-        attachAudioUnlock();
+        audioOverlay.classList.add("visible");
+        enableClickAnywhereAudio();
       }
     }
 
     function resetForm() {
       teamSizeInput.value = 4;
-      onlinePlayersInput.value = 1;
       currentShieldInput.value = 8;
       targetShieldInput.value = 24;
       calculate();
@@ -503,17 +600,11 @@
 
     function calculate() {
       const teamSize = Number(teamSizeInput.value);
-      const onlinePlayers = Number(onlinePlayersInput.value);
       const currentShield = Number(currentShieldInput.value);
       const targetShield = Number(targetShieldInput.value);
 
       if (!Number.isFinite(teamSize) || teamSize < 1 || teamSize > 12) {
         setStatus("Total players in the claim must be between 1 and 12.", true);
-        return;
-      }
-
-      if (!Number.isFinite(onlinePlayers) || onlinePlayers < 0 || onlinePlayers > teamSize) {
-        setStatus("Online players must be between 0 and the total team size.", true);
         return;
       }
 
@@ -536,19 +627,11 @@
       const realHoursToTarget = missingShieldHours / hoursChargedPerHour;
       const delayHours = MANUAL_DELAY_MINUTES / 60;
 
-      timeToTargetOutput.textContent = onlinePlayers > 0 ? formatDurationFromHours(realHoursToTarget) : "Not charging";
+      timeToTargetOutput.textContent = formatDurationFromHours(realHoursToTarget);
       chargeRateOutput.textContent = `${shieldSecondsChargedPerSecond.toFixed(2)} sec/sec`;
       missingShieldOutput.textContent = `${missingShieldHours.toFixed(2)}h`;
       activationDelayOutput.textContent = "15m manual";
-      onlineStatusOutput.textContent = onlinePlayers > 0 ? `${onlinePlayers} online` : "Offline";
-
-      if (onlinePlayers === 0) {
-        setStatus(
-          `Nobody on the team is online, so the shield is not charging right now. With ${teamSize} total players in the claim, it will charge at ${shieldSecondsChargedPerSecond.toFixed(2)} shield seconds per second once at least one player logs in.`,
-          true
-        );
-        return;
-      }
+      teamScalingOutput.textContent = teamSize <= 3 ? "Fast" : teamSize <= 7 ? "Medium" : "Slow";
 
       if (missingShieldHours === 0) {
         setStatus(
@@ -558,7 +641,7 @@
       }
 
       setStatus(
-        `With ${onlinePlayers} player${onlinePlayers === 1 ? "" : "s"} online and ${teamSize} total player${teamSize === 1 ? "" : "s"} in the claim, you need ${formatDurationFromHours(realHoursToTarget)} of shield charging time to go from ${safeCurrentShield.toFixed(2)}h to ${safeTargetShield.toFixed(2)}h. Extra online players do not speed it up. Manual activation still takes ${formatDurationFromHours(delayHours)} before protection begins.`
+        `With ${teamSize} total player${teamSize === 1 ? "" : "s"} in the claim, you need ${formatDurationFromHours(realHoursToTarget)} of recharge time to go from ${safeCurrentShield.toFixed(2)}h to ${safeTargetShield.toFixed(2)}h. Larger teams regenerate more slowly.`
       );
     }
 
