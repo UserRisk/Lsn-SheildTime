@@ -1,191 +1,569 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shield Calculator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifestealNet Shield Time Calculator</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(9, 23, 44, 0.04);
+      --panel-border: rgba(142, 208, 255, 0.05);
+      --text: #eaf6ff;
+      --muted: #9cb9d3;
+      --accent: #73d6ff;
+      --accent-2: #3e7dff;
+      --danger: #ffabab;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.12);
+    }
 
-<style>
-  * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
-  body {
-    margin: 0;
-    min-height: 100vh;
-    font-family: Arial, sans-serif;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-      radial-gradient(circle at top left, rgba(255,255,255,0.08), transparent 25%),
-      radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 30%),
-      linear-gradient(135deg, #0b1220, #111827, #1e293b);
-    padding: 40px;
-  }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--text);
+      background: #000;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
 
-  .card {
-    width: 100%;
-    max-width: 900px;
-    padding: 34px;
-    border-radius: 30px;
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.14);
-  }
+    .video-bg {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: -3;
+      background: #000;
+    }
 
-  .top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 26px;
-  }
+    .video-bg video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 177.78vh;
+      min-width: 100vw;
+      height: 56.25vw;
+      min-height: 100vh;
+      transform: translate(-50%, -50%) scale(1.08);
+      pointer-events: none;
+      object-fit: cover;
+      filter: saturate(1) contrast(1) brightness(0.7);
+    }
 
-  h1 {
-    margin: 0;
-    font-size: 32px;
-  }
+    .video-tint {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background: transparent;
+    }
 
-  .pill {
-    padding: 10px 16px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.08);
-    font-size: 13px;
-    color: rgba(255,255,255,0.7);
-  }
+    .video-noise {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(115, 214, 255, 0.06) 1px, transparent 1px);
+      background-size: 100% 4px, 4px 100%;
+      mix-blend-mode: soft-light;
+      animation: scan 12s linear infinite;
+    }
 
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 28px;
-  }
+    .shell {
+      width: min(960px, 100%);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 22px;
+      animation: riseIn 0.9s ease-out both;
+    }
 
-  .panel {
-    background: rgba(255,255,255,0.05);
-    border-radius: 24px;
-    padding: 24px;
-  }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+    }
 
-  label {
-    font-size: 13px;
-    color: rgba(255,255,255,0.7);
-  }
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      pointer-events: none;
+    }
 
-  input {
-    width: 100%;
-    height: 48px;
-    margin-top: 6px;
-    margin-bottom: 14px;
-    border-radius: 14px;
-    border: none;
-    padding: 0 12px;
-    background: rgba(255,255,255,0.1);
-    color: white;
-  }
+    .calculator {
+      padding: 28px;
+    }
 
-  .result {
-    font-size: 18px;
-    font-weight: bold;
-    margin-top: 10px;
-  }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
 
-  .watermark {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 12px;
-    color: rgba(255,255,255,0.35);
-  }
-</style>
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      line-height: 0.94;
+    }
+
+    .intro {
+      margin: 14px 0 0;
+      max-width: 60ch;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid rgba(142, 208, 255, 0.05);
+      background: rgba(8, 20, 38, 0.07);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.18s ease, transform 0.18s ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: rgba(115, 214, 255, 0.82);
+      transform: translateY(-1px);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      flex: 1;
+      color: #fff4f4;
+      background: linear-gradient(135deg, #79ddff, #2d6fff);
+      box-shadow: 0 10px 30px rgba(62, 125, 255, 0.28);
+    }
+
+    .ghost {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(142, 208, 255, 0.07);
+    }
+
+    .summary {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .result-card {
+      padding: 18px 18px 20px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.012);
+      border: 1px solid rgba(142, 208, 255, 0.08);
+      animation: pulseGlow 4s ease-in-out infinite;
+    }
+
+    .result-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .result-value {
+      margin: 8px 0 0;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.008);
+      border: 1px solid rgba(142, 208, 255, 0.08);
+    }
+
+    .stat-title {
+      display: block;
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-bottom: 6px;
+    }
+
+    .stat strong {
+      font-size: 1.2rem;
+    }
+
+    .status {
+      min-height: 60px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.008);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .status.error {
+      color: var(--danger);
+      border: 1px solid rgba(255, 171, 171, 0.14);
+      background: rgba(78, 28, 40, 0.1);
+    }
+
+    .footnote {
+      margin-top: auto;
+      color: rgba(147, 164, 191, 0.72);
+      font-size: 0.86rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    @keyframes riseIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 rgba(255, 71, 71, 0);
+      }
+      50% {
+        box-shadow: 0 0 34px rgba(115, 214, 255, 0.18);
+      }
+    }
+
+    @keyframes scan {
+      from {
+        transform: translateY(-12px);
+      }
+      to {
+        transform: translateY(12px);
+      }
+    }
+
+    @media (max-width: 860px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 14px;
+      }
+
+      .calculator,
+      .summary {
+        padding: 20px;
+      }
+
+      .grid,
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
-
 <body>
-
-<div class="card">
-  <div class="top">
-    <h1>Shield Calculator</h1>
-    <div class="pill">Risk • Discord: R1skx</div>
+  <div class="video-bg" aria-hidden="true">
+    <video id="bgVideo" autoplay loop playsinline preload="auto">
+      <source src="https://dl.dropboxusercontent.com/scl/fi/653ikx6qlj6eyahuyymdv/YTDown.com_YouTube_Sparkle-Your-Name-AMV_Media_-pHfPJGatgE_001_1080p.mp4?rlkey=mm156kn7yp5ipresssuca9o6s&st=on4nh1dt" type="video/mp4">
+    </video>
   </div>
 
-  <div class="grid">
-    <div class="panel">
-      <label>Players in team</label>
-      <input id="team" type="number" value="0">
+  <main class="shell">
+    <section class="panel calculator">
+      <p class="eyebrow">LifestealNet Utility</p>
+      <h1>Shield Time Calculator</h1>
+      <p class="intro">
+        Estimate how long your claim shield needs to recharge based on your team size and current shield.
+      </p>
 
-      <label>Online players</label>
-      <input id="online" type="number" value="0">
+      <div class="grid">
+        <div class="field">
+          <label for="teamSize">Total players in claim</label>
+          <input id="teamSize" type="number" min="1" max="12" value="4">
+        </div>
 
-      <label>Target hours</label>
-      <input id="target" type="number" value="0">
+        <div class="field">
+          <label for="onlinePlayers">Online players</label>
+          <input id="onlinePlayers" type="number" min="0" max="12" value="1">
+        </div>
 
-      <label>Current shield</label>
-      <input id="current" type="number" value="0">
-    </div>
+        <div class="field">
+          <label for="currentShield">Current shield hours</label>
+          <input id="currentShield" type="number" min="0" max="24" step="0.1" value="8">
+        </div>
 
-    <div class="panel">
-      <div>Charge speed: <span id="speed">-</span></div>
-      <div>Missing: <span id="missing">-</span></div>
-      <div class="result">Time: <span id="time">-</span></div>
-      <div id="status"></div>
-    </div>
-  </div>
+        <div class="field">
+          <label for="targetShield">Target shield hours</label>
+          <input id="targetShield" type="number" min="0" max="24" step="0.1" value="24">
+        </div>
+      </div>
 
-  <div class="watermark">
-    Made by Risk • Discord: R1skx
-  </div>
-</div>
+      <div class="actions">
+        <button class="primary" id="calculateBtn" type="button">Calculate</button>
+        <button class="ghost" id="resetBtn" type="button">Reset</button>
+      </div>
 
-<script>
-function format(h){
-  if(h<=0) return "0h";
-  let s=Math.floor(h*3600);
-  let hh=Math.floor(s/3600);
-  let mm=Math.floor((s%3600)/60);
-  return hh+"h "+mm+"m";
-}
+    </section>
 
-function calc(){
-  let team=parseFloat(teamEl.value);
-  let online=parseFloat(onlineEl.value);
-  let target=parseFloat(targetEl.value);
-  let current=parseFloat(currentEl.value);
+    <aside class="panel summary">
+      <div class="result-card">
+        <p class="result-label">Time To Reach Target</p>
+        <p class="result-value" id="timeToTarget">0h 0m</p>
+      </div>
 
-  if(team<=0){
-    status.innerText="Enter team size";
-    return;
-  }
+      <div class="meta">
+        <div class="stat">
+          <span class="stat-title">Recharge speed</span>
+          <strong id="chargeRate">0 sec shield / sec</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-title">Hours needed</span>
+          <strong id="missingShield">0h</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-title">Protection starts</span>
+          <strong id="activationDelay">15m manual</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-title">Online status</span>
+          <strong id="onlineStatus">Charging</strong>
+        </div>
+      </div>
 
-  let speed=12/team;
-  speedEl.innerText=speed.toFixed(2);
+      <div class="status" id="status">
+        Ready.
+      </div>
 
-  let missing=Math.max(0,target-current);
-  missingEl.innerText=missing.toFixed(2)+"h";
+      <p class="footnote">
+        Risk • Discord: R1skx ©
+      </p>
+    </aside>
+  </main>
 
-  if(online<=0){
-    timeEl.innerText="-";
-    status.innerText="Not charging";
-    return;
-  }
+  <script>
+    const MAX_SHIELD_HOURS = 24;
+    const MANUAL_DELAY_MINUTES = 15;
 
-  let hours=(missing*team*300)/3600;
-  timeEl.innerText=format(hours);
-  status.innerText="Charging";
-}
+    const teamSizeInput = document.getElementById("teamSize");
+    const onlinePlayersInput = document.getElementById("onlinePlayers");
+    const currentShieldInput = document.getElementById("currentShield");
+    const targetShieldInput = document.getElementById("targetShield");
+    const bgVideo = document.getElementById("bgVideo");
 
-let teamEl=document.getElementById("team");
-let onlineEl=document.getElementById("online");
-let targetEl=document.getElementById("target");
-let currentEl=document.getElementById("current");
+    const timeToTargetOutput = document.getElementById("timeToTarget");
+    const chargeRateOutput = document.getElementById("chargeRate");
+    const missingShieldOutput = document.getElementById("missingShield");
+    const activationDelayOutput = document.getElementById("activationDelay");
+    const onlineStatusOutput = document.getElementById("onlineStatus");
+    const statusOutput = document.getElementById("status");
 
-let speedEl=document.getElementById("speed");
-let missingEl=document.getElementById("missing");
-let timeEl=document.getElementById("time");
-let status=document.getElementById("status");
+    document.getElementById("calculateBtn").addEventListener("click", calculate);
+    document.getElementById("resetBtn").addEventListener("click", resetForm);
 
-document.querySelectorAll("input").forEach(i=>{
-  i.addEventListener("input",calc);
-});
+    function formatDurationFromHours(hours) {
+      const safeHours = Math.max(0, hours);
+      const totalSeconds = Math.round(safeHours * 3600);
+      const hrs = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
 
-calc();
-</script>
+      if (hrs > 0) {
+        return `${hrs}h ${mins}m`;
+      }
 
+      if (mins > 0) {
+        return `${mins}m ${secs}s`;
+      }
+
+      return `${secs}s`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function setStatus(message, isError = false) {
+      statusOutput.textContent = message;
+      statusOutput.className = isError ? "status error" : "status";
+    }
+
+    function attachAudioUnlock() {
+      const unlock = async () => {
+        try {
+          bgVideo.currentTime = 0;
+          bgVideo.muted = false;
+          bgVideo.volume = 1;
+          await bgVideo.play();
+        } catch (error) {
+          // Ignore repeated browser autoplay blocks.
+        } finally {
+          document.removeEventListener("pointerdown", unlock);
+          document.removeEventListener("keydown", unlock);
+        }
+      };
+
+      document.addEventListener("pointerdown", unlock, { once: true });
+      document.addEventListener("keydown", unlock, { once: true });
+    }
+
+    async function tryAutoplayWithAudio() {
+      bgVideo.currentTime = 0;
+      bgVideo.muted = false;
+      bgVideo.volume = 1;
+
+      try {
+        await bgVideo.play();
+      } catch (error) {
+        bgVideo.muted = true;
+        await bgVideo.play().catch(() => {});
+        attachAudioUnlock();
+      }
+    }
+
+    function resetForm() {
+      teamSizeInput.value = 4;
+      onlinePlayersInput.value = 1;
+      currentShieldInput.value = 8;
+      targetShieldInput.value = 24;
+      calculate();
+    }
+
+    function calculate() {
+      const teamSize = Number(teamSizeInput.value);
+      const onlinePlayers = Number(onlinePlayersInput.value);
+      const currentShield = Number(currentShieldInput.value);
+      const targetShield = Number(targetShieldInput.value);
+
+      if (!Number.isFinite(teamSize) || teamSize < 1 || teamSize > 12) {
+        setStatus("Total players in the claim must be between 1 and 12.", true);
+        return;
+      }
+
+      if (!Number.isFinite(onlinePlayers) || onlinePlayers < 0 || onlinePlayers > teamSize) {
+        setStatus("Online players must be between 0 and the total team size.", true);
+        return;
+      }
+
+      if (!Number.isFinite(currentShield) || currentShield < 0 || currentShield > MAX_SHIELD_HOURS) {
+        setStatus("Current shield must be between 0 and 24 hours.", true);
+        return;
+      }
+
+      if (!Number.isFinite(targetShield) || targetShield < 0 || targetShield > MAX_SHIELD_HOURS) {
+        setStatus("Target shield must be between 0 and 24 hours.", true);
+        return;
+      }
+
+      const safeCurrentShield = clamp(currentShield, 0, MAX_SHIELD_HOURS);
+      const safeTargetShield = clamp(targetShield, 0, MAX_SHIELD_HOURS);
+      const missingShieldHours = Math.max(0, safeTargetShield - safeCurrentShield);
+
+      const shieldSecondsChargedPerSecond = 12 / teamSize;
+      const hoursChargedPerHour = 12 / teamSize;
+      const realHoursToTarget = missingShieldHours / hoursChargedPerHour;
+      const delayHours = MANUAL_DELAY_MINUTES / 60;
+
+      timeToTargetOutput.textContent = onlinePlayers > 0 ? formatDurationFromHours(realHoursToTarget) : "Not charging";
+      chargeRateOutput.textContent = `${shieldSecondsChargedPerSecond.toFixed(2)} sec/sec`;
+      missingShieldOutput.textContent = `${missingShieldHours.toFixed(2)}h`;
+      activationDelayOutput.textContent = "15m manual";
+      onlineStatusOutput.textContent = onlinePlayers > 0 ? `${onlinePlayers} online` : "Offline";
+
+      if (onlinePlayers === 0) {
+        setStatus(
+          `Nobody on the team is online, so the shield is not charging right now. With ${teamSize} total players in the claim, it will charge at ${shieldSecondsChargedPerSecond.toFixed(2)} shield seconds per second once at least one player logs in.`,
+          true
+        );
+        return;
+      }
+
+      if (missingShieldHours === 0) {
+        setStatus(
+          `Your shield is already at or above the target. If you toggle it manually, protection starts after ${formatDurationFromHours(delayHours)}.`
+        );
+        return;
+      }
+
+      setStatus(
+        `With ${onlinePlayers} player${onlinePlayers === 1 ? "" : "s"} online and ${teamSize} total player${teamSize === 1 ? "" : "s"} in the claim, you need ${formatDurationFromHours(realHoursToTarget)} of shield charging time to go from ${safeCurrentShield.toFixed(2)}h to ${safeTargetShield.toFixed(2)}h. Extra online players do not speed it up. Manual activation still takes ${formatDurationFromHours(delayHours)} before protection begins.`
+      );
+    }
+
+    calculate();
+    tryAutoplayWithAudio();
+  </script>
 </body>
 </html>
