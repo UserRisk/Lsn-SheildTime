@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shield Calculator</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at top left, rgba(255,255,255,0.08), transparent 25%),
+      radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 30%),
+      linear-gradient(135deg, #0b1220, #111827, #1e293b);
+    padding: 40px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 900px;
+    padding: 34px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 26px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 32px;
+  }
+
+  .pill {
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+
+  .panel {
+    background: rgba(255,255,255,0.05);
+    border-radius: 24px;
+    padding: 24px;
+  }
+
+  label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  input {
+    width: 100%;
+    height: 48px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    border: none;
+    padding: 0 12px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+
+  .result {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .watermark {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="top">
+    <h1>Shield Calculator</h1>
+    <div class="pill">Risk • Discord: R1skx</div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <label>Players in team</label>
+      <input id="team" type="number" value="0">
+
+      <label>Online players</label>
+      <input id="online" type="number" value="0">
+
+      <label>Target hours</label>
+      <input id="target" type="number" value="0">
+
+      <label>Current shield</label>
+      <input id="current" type="number" value="0">
+    </div>
+
+    <div class="panel">
+      <div>Charge speed: <span id="speed">-</span></div>
+      <div>Missing: <span id="missing">-</span></div>
+      <div class="result">Time: <span id="time">-</span></div>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <div class="watermark">
+    Made by Risk • Discord: R1skx
+  </div>
+</div>
+
+<script>
+function format(h){
+  if(h<=0) return "0h";
+  let s=Math.floor(h*3600);
+  let hh=Math.floor(s/3600);
+  let mm=Math.floor((s%3600)/60);
+  return hh+"h "+mm+"m";
+}
+
+function calc(){
+  let team=parseFloat(teamEl.value);
+  let online=parseFloat(onlineEl.value);
+  let target=parseFloat(targetEl.value);
+  let current=parseFloat(currentEl.value);
+
+  if(team<=0){
+    status.innerText="Enter team size";
+    return;
+  }
+
+  let speed=12/team;
+  speedEl.innerText=speed.toFixed(2);
+
+  let missing=Math.max(0,target-current);
+  missingEl.innerText=missing.toFixed(2)+"h";
+
+  if(online<=0){
+    timeEl.innerText="-";
+    status.innerText="Not charging";
+    return;
+  }
+
+  let hours=(missing*team*300)/3600;
+  timeEl.innerText=format(hours);
+  status.innerText="Charging";
+}
+
+let teamEl=document.getElementById("team");
+let onlineEl=document.getElementById("online");
+let targetEl=document.getElementById("target");
+let currentEl=document.getElementById("current");
+
+let speedEl=document.getElementById("speed");
+let missingEl=document.getElementById("missing");
+let timeEl=document.getElementById("time");
+let status=document.getElementById("status");
+
+document.querySelectorAll("input").forEach(i=>{
+  i.addEventListener("input",calc);
+});
+
+calc();
+</script>
+
+</body>
+</html>
